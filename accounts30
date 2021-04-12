@@ -1,0 +1,2805 @@
+openapi: 3.0.0
+info:
+  title: Accounts
+  version: 2.1.1
+  description: >-
+    This API retrieves a list of the current, savings, and credit accounts that
+    the customer or Santander staff is allowed to access, and provides details
+    about the accounts, such as balances and transactions. 
+
+
+    The API can also be used to validate whether an account has enough funds for a purchase, and to create and cancel account limits.
+security:
+  - X-Santander-Client-Id: []
+paths:
+  /:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/accountsListResponse"
+        "204":
+          description: No data response
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "504":
+          description: Gateway timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+      summary: Retrieves the account list of a Santander customer.
+      description: >-
+        Retrieves a list of current, savings, and credit accounts of a customer.
+        This operation is available to Santander staff, in addition to physical
+        and business customers.
+
+
+        To use this operation:
+
+        - With physical customers, the 'Document-Type' and 'Document-Number' parameters are not needed.
+
+        - With representatives of business customers, the 'Document-Type' and 'Document-Number' parameters can be used to identify the company whose information is going to be retrieved.
+
+        - With all customers, if the customer has a channel access agreement, the 'Channel-Access-Agreement-Id' parameter can be used to restrict the retrieved information only to data that the channel access agreement authorises the logged-in person to access.
+
+        - With Santander staff, the 'Document-Number' or 'customer_id' parameter is required to identify the customer whose data they are authorized to access.
+      parameters:
+        - $ref: "#/components/parameters/X-B3-TraceId"
+        - $ref: "#/components/parameters/X-B3-ParentSpanId"
+        - $ref: "#/components/parameters/X-B3-SpanId"
+        - $ref: "#/components/parameters/X-B3-Sampled"
+        - $ref: "#/components/parameters/X-Santander-Device"
+        - $ref: "#/components/parameters/X-Santander-Client-Id"
+        - $ref: "#/components/parameters/Authorization"
+        - name: Document-Type
+          required: false
+          in: header
+          description: >-
+            Type of the official identification document that has been used in
+            the bank to uniquely and legally identify the customer.
+
+
+            The possible values are:
+
+            - national_id_card 
+
+            - passport 
+
+            - childs_id_card 
+
+            - social_security_number
+
+            - foreign_resident_id_card
+
+            - driving_license_number
+
+            - tax_id
+
+
+            The document type depends on the customer type (for example, only 'tax_id' is applicable for a business customer). 
+          example: tax_id
+          schema:
+            type: string
+        - name: Document-Number
+          required: false
+          in: header
+          description: >-
+            Identification document number.
+
+
+            The value is country-dependent.
+
+
+            If the 'Document-Type' parameter is provided, this parameter is mandatory, and the retrieved account must be linked to the customer identified by the document. 
+
+
+            In case of a business customer, the company identification can also be included in this value, and the accounts are retrieved only if the logged-in company representative is authorized to access the company accounts.
+          example: "B86561412 "
+          schema:
+            type: string
+        - name: Channel-Access-Agreement-Id
+          required: false
+          in: header
+          description: >-
+            Channel access agreement ID.
+
+
+            If a value is provided for this parameter, the requested data is retrieved only if the defined channel access agreement authorises the logged-in person to access that data.
+          example: "004910015200000090"
+          schema:
+            type: string
+        - name: Access-Channel
+          required: false
+          in: header
+          description: >-
+            Access channel or operating channel the customer is using. 
+
+
+            If a value is provided for this parameter, the response includes the alias for the specific channel. 
+
+
+            The possible values are:
+
+            - web
+
+            - mobile
+
+            - back office
+          example: web
+          schema:
+            type: string
+        - name: _offset
+          required: false
+          in: query
+          description: >-
+            Number of pages to be omitted from the beginning of the response.
+
+
+            The number of rows on each omitted page is determined by the '_limit' parameter.
+
+
+            The default value is 0, in which case the first page is shown.
+          example: "1"
+          schema:
+            type: string
+        - name: _limit
+          required: false
+          in: query
+          description: |-
+            Maximum number of rows to be included on each page in the response.
+
+            Fewer rows can be returned, if the query does not yield that many.
+
+            The default value is 5.
+          example: "3"
+          schema:
+            type: string
+        - name: _expand
+          required: false
+          in: query
+          description: >-
+            Whether balances are to be included in the response.
+
+
+            If the value is 'balances', the response includes the following balance types:
+
+            - Available balance
+
+            - Pending balance
+
+            - Withholding balance
+
+            - Overdraft limit
+
+            - Overdraft used
+
+
+            The default value is empty and returns no balances.
+          example: balances
+          schema:
+            type: string
+        - name: status
+          required: false
+          in: query
+          description: >-
+            Status of the accounts to be included in the response.
+
+
+            The possible values are:
+
+            - Open = Account is open and movements are restricted only by the customer's available balance and account contract attributes. This includes accounts with warnings.
+
+            - Closed = Account is closed.
+
+            - Pending Closure = Account is being closed.
+
+            - Open with Severe Lock = Account is open but there is a lock on some or all account movements.
+          example: Open
+          schema:
+            type: string
+        - name: accounts_list
+          required: false
+          in: query
+          description: >-
+            List of accounts to be included in the response.
+
+
+            The accounts must be defined with comma-separated  account numbers without blank spaces. All accounts must be identified using the account number format defined in the 'account_id_type' parameter.
+
+
+            The maximum number of included accounts is 20. If you want data about more than 20 accounts, call the API multiple times, for 20 accounts at a time.
+          example: account1,account2,account3,account4,account5
+          schema:
+            type: string
+        - name: account_id_type
+          required: false
+          in: query
+          description: >-
+            Format used for the account numbers in the 'accounts_list'
+            parameter.
+
+
+            The possible values are:
+
+            - IBA = IBAN code
+
+            - BBA = Basic Bank Account Number (BBAN) that represents a country-specific bank account number. Each country has its own standards for the format and length of the BBAN. The value is at most 31 char or 35 bytes long. 
+
+
+            For example: 
+
+            - In UK, the BBAN is: Sortcode(6) + Account(8)
+
+            - In Spain, it is: Banco(4) + Sucursal(4) + CD(2) + CTA(10)
+
+
+            The default value is BBA.
+          example: IBA
+          schema:
+            type: string
+        - name: product_type
+          required: false
+          in: query
+          description: >-
+            Product family type that can be associated with the accounts. Each
+            account can have a specific product type associated with it, and
+            only accounts that can be associated with the defined product type
+            are included in the response.
+
+            The possible values are:
+
+            - Acquirement
+
+            - loan
+
+            - Assurance.
+          example: Acquirement
+          schema:
+            type: string
+        - name: product_id_list
+          required: false
+          in: query
+          description: >-
+            Product identification that can be associated with the accounts.
+            This is a free value. Not possible values defined. If this field is
+            filled, the field product_type should be empty.
+
+
+            The maximum number of included identifications is 20. If you want data about more than 20 identifications, call the API multiple times, for 20 identifications at a time.
+          example: 6546080000001,6546020000002,6546010000003
+          schema:
+            type: string
+        - name: customer_id
+          required: false
+          in: query
+          description: Customer ID of the customer whose accounts are to be included in the
+            response. Applies only when Santander staff wants to access data on
+            the customer's behalf.
+          example: F000223141
+          schema:
+            type: string
+      security:
+        - JWTProfile:
+            - acclistcid.read
+  "/{account_id}":
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/accountDetailsResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "504":
+          description: Gateway timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+      summary: Retrieves basic information about a Santander customer's account.
+      description: >-
+        Retrieves basic information about a specific savings, current, or credit
+        account. This operation is available to Santander staff, in addition to
+        physical and business customers.
+
+
+        To send this request, you must provide an account number in the request path.  The number uses the BBAN format by default. To use another format, define the format in the 'account_id_type' parameter.
+      parameters:
+        - $ref: "#/components/parameters/X-B3-TraceId"
+        - $ref: "#/components/parameters/X-B3-ParentSpanId"
+        - $ref: "#/components/parameters/X-B3-SpanId"
+        - $ref: "#/components/parameters/X-B3-Sampled"
+        - $ref: "#/components/parameters/X-Santander-Device"
+        - $ref: "#/components/parameters/X-Santander-Client-Id"
+        - $ref: "#/components/parameters/Authorization"
+        - name: Channel-Access-Agreement-Id
+          required: false
+          in: header
+          description: >-
+            Channel access agreement ID.
+
+
+            If a value is provided for this parameter, the requested data is retrieved only if the defined channel access agreement authorises the logged-in person to access that data.
+          example: "004910015200000090"
+          schema:
+            type: string
+        - name: Access-Channel
+          required: false
+          in: header
+          description: >-
+            Access channel or operating channel the customer is using. 
+
+
+            If a value is provided for this parameter, the response includes the alias for the specific channel. 
+
+
+            The possible values are:
+
+            - web
+
+            - mobile
+
+            - back office
+          example: web
+          schema:
+            type: string
+        - name: account_id
+          required: true
+          in: path
+          description: |-
+            Number of the account to be used in the query. 
+
+            The number format is defined in the 'account_id_type' parameter. 
+          example: "32180000118359700"
+          schema:
+            type: string
+        - name: _expand
+          required: false
+          in: query
+          description: >-
+            Whether a list of cards related to the account is to be included in
+            the response.
+
+
+            If the value is 'cards', the response includes the card list.
+
+
+            The default value is empty and returns no card list.
+          example: cards
+          schema:
+            type: string
+        - name: include_last_transactions
+          required: false
+          in: query
+          description: >-
+            Whether latest transactions are to be included in the response.
+
+
+            The default value is false and returns an empty 'latestTransactions' object. If the value is set to true, the response includes the 5 latest transactions.
+          example: true
+          schema:
+            type: boolean
+        - name: account_id_type
+          required: false
+          in: query
+          description: >-
+            Format used for the account number in the 'account_id' parameter.
+
+
+            The possible values are:
+
+            - IBA = IBAN code
+
+            - BBA = Basic Bank Account Number (BBAN) that represents a country-specific bank account number. Each country has its own standards for the format and length of the BBAN. The value is at most 31 char or 35 bytes long. 
+
+
+            For example: 
+
+            - In UK, the BBAN is: Sortcode(6) + Account(8)
+
+            - In Spain, it is: Banco(4) + Sucursal(4) + CD(2) + CTA(10)
+
+
+            The default value is BBA.
+          example: IBA
+          schema:
+            type: string
+      security:
+        - JWTProfile:
+            - accdetcid.read
+  "/{account_id}/transactions":
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/transactionsListResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "409":
+          description: SCA required
+          headers:
+            Token-Request:
+              description: This field will be returned when the return code is 409 (SCA
+                REQUIRED). It will be used to require the SCA authentication in
+                order to identify the operation which is requiring the SCA.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "504":
+          description: Gateway timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+      summary: Retrieves the account transaction list of a Santander customer.
+      description: >-
+        Retrieves a list of transactions for a specific savings, current, or
+        credit account. This operation is available to Santander staff, in
+        addition to physical and business customers.
+
+
+        To send this request, you must provide an account number in the request path.  The number uses the BBAN format by default. To use another format, define the format in the 'account_id_type' parameter.
+
+
+        The transactions included in the response can be filtered by a time period (start and end dates), transaction type, currency, and amount. You can also sort them in descending or ascending order by date.
+
+
+        The maximum available time period depends on the local bank.
+      parameters:
+        - $ref: "#/components/parameters/X-B3-TraceId"
+        - $ref: "#/components/parameters/X-B3-ParentSpanId"
+        - $ref: "#/components/parameters/X-B3-SpanId"
+        - $ref: "#/components/parameters/X-B3-Sampled"
+        - $ref: "#/components/parameters/X-Santander-Device"
+        - $ref: "#/components/parameters/X-Santander-Client-Id"
+        - $ref: "#/components/parameters/Authorization"
+        - name: Channel-Access-Agreement-Id
+          required: false
+          in: header
+          description: >-
+            Channel access agreement ID.
+
+
+            If a value is provided for this parameter, the requested data is retrieved only if the defined channel access agreement authorises the logged-in person to access that data.
+          example: "004910015200000090"
+          schema:
+            type: string
+        - name: Access-Channel
+          required: false
+          in: header
+          description: >-
+            Access channel or operating channel the customer is using. 
+
+
+            If a value is provided for this parameter, the response includes the alias for the specific channel. 
+
+
+            The possible values are:
+
+            - web
+
+            - mobile
+
+            - back office
+          example: web
+          schema:
+            type: string
+        - name: Sca-Token
+          required: false
+          in: header
+          description: SCA Token. This token will contain the SCA evidence that this
+            operation has been validated with the SCA regulation system. This
+            token should be validated by local system.
+          example: 08945089345089345345adfgñjdfgñklñjkl34etñjkldfgñhklfbvñnkl345ldfgpio
+          schema:
+            type: string
+        - name: account_id
+          required: true
+          in: path
+          description: |-
+            Number of the account to be used in the query. 
+
+            The number format is defined in the 'account_id_type' parameter. 
+          example: "00491500051234567892"
+          schema:
+            type: string
+        - name: _offset
+          required: false
+          in: query
+          description: >-
+            Number of pages to be omitted from the beginning of the response.
+
+
+            The number of rows on each omitted page is determined by the '_limit' parameter.
+
+
+            The default value is 0, in which case the first page is shown.
+          example: "1"
+          schema:
+            type: string
+        - name: _limit
+          required: false
+          in: query
+          description: |-
+            Maximum number of rows to be included on each page in the response.
+
+            Fewer rows can be returned, if the query does not yield that many.
+
+            The default value is 20.
+          example: "3"
+          schema:
+            type: string
+        - name: from_date
+          required: false
+          in: query
+          description: >-
+            Start date for the time period from which transactions are to be
+            retrieved, based on the date when the transactions have been
+            originally created.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+          schema:
+            type: string
+        - name: to_date
+          required: false
+          in: query
+          description: >-
+            End date for the time period from which transactions are to be
+            retrieved, based on the date when the transactions have been
+            originally created.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+          schema:
+            type: string
+        - name: from_processed_date
+          required: false
+          in: query
+          description: >-
+            Start date for the time period from which transactions are to be
+            retrieved, based on the date when the transactions have been
+            processed in the system.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+          schema:
+            type: string
+        - name: to_processed_date
+          required: false
+          in: query
+          description: >-
+            End date for the time period from which transactions are to be
+            retrieved, based on the date when the transactions have been
+            processed in the system.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+          schema:
+            type: string
+        - name: from_accounting_date
+          required: false
+          in: query
+          description: >-
+            Start date for the time period from which transactions are to be
+            retrieved, based on the accounting date of the transactions (the
+            date used to calculate the profit and loss).
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+          schema:
+            type: string
+        - name: to_accounting_date
+          required: false
+          in: query
+          description: >-
+            End date for the time period from which transactions are to be
+            retrieved, based on the accounting date of the transactions (the
+            date used to calculate the profit and loss).
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+          schema:
+            type: string
+        - name: from_amount
+          required: false
+          in: query
+          description: >-
+            Minimum monetary transaction value required for the transaction to
+            be included in the response.
+
+
+            Both negative and positive values are allowed.
+          example: 100
+          schema:
+            type: number
+            format: double
+        - name: to_amount
+          required: false
+          in: query
+          description: >-
+            Maximum monetary transaction value required for the transaction to
+            be included in the response.
+
+
+            Both negative and positive values are allowed.
+          example: 200
+          schema:
+            type: number
+            format: double
+        - name: _sort
+          required: false
+          in: query
+          description: >-
+            Sorting order for the retrieved transactions, based on the
+            transaction date type defined in the 'date_movements' parameter.
+
+
+            The possible values are:
+
+            - +date = ascending
+
+            - -date = descending
+          example: +date
+          schema:
+            type: string
+        - name: transaction_type
+          required: false
+          in: query
+          description: >-
+            Types of transaction to be included in the response, based on how
+            the transaction affects the account balance.
+
+
+            The possible values are:
+
+            - credit or C = balance increased
+
+            - debit or D = balance decreased
+
+            - reverse credit or RC = balance decreased
+
+            - reverse debit or RD = balance increased
+
+
+            If this value is empty, all transaction types are included. This parameter is not compatible with the 'from_amount' and 'to_amount' parameters. If you have defined values for those, leave this parameter empty.
+          example: credit
+          schema:
+            type: string
+        - name: date_movements
+          required: false
+          in: query
+          description: |-
+            Date type used to sort the transactions in the response.
+
+            The possible values are:
+            - creation = creation dates are used
+            - processed = processing dates are used
+            - accounting = accounting dates are used
+
+            If the value is omitted, the default value is 'creation'.
+          example: processed
+          schema:
+            type: string
+        - name: account_id_type
+          required: false
+          in: query
+          description: >-
+            Format used for the account number in the 'account_id' parameter.
+
+
+            The possible values are:
+
+            - IBA = IBAN code
+
+            - BBA = Basic Bank Account Number (BBAN) that represents a country-specific bank account number. Each country has its own standards for the format and length of the BBAN. The value is at most 31 char or 35 bytes long. 
+
+
+            For example: 
+
+            - In UK, the BBAN is: Sortcode(6) + Account(8)
+
+            - In Spain, it is: Banco(4) + Sucursal(4) + CD(2) + CTA(10)
+
+
+            The default value is BBA.
+          example: IBA
+          schema:
+            type: string
+      security:
+        - JWTProfile:
+            - acctrancid.read
+  "/{account_id}/transactions/{transaction_id}":
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/transactionDetailsResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "504":
+          description: Gateway timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+      summary: Retrieves basic information about an account transaction.
+      description: >-
+        Retrieves the details of a specific account transaction. This operation
+        is available to Santander staff, in addition to physical and business
+        customers.
+
+
+        To send this request, you must provide an account number and a unique transaction ID in the request path. The account number uses the BBAN format by default. To use another format, define the format in the 'account_id_type' parameter.
+      parameters:
+        - $ref: "#/components/parameters/X-B3-TraceId"
+        - $ref: "#/components/parameters/X-B3-ParentSpanId"
+        - $ref: "#/components/parameters/X-B3-SpanId"
+        - $ref: "#/components/parameters/X-B3-Sampled"
+        - $ref: "#/components/parameters/X-Santander-Device"
+        - $ref: "#/components/parameters/X-Santander-Client-Id"
+        - $ref: "#/components/parameters/Authorization"
+        - name: account_id
+          required: true
+          in: path
+          description: |-
+            Number of the account to be used in the query. 
+
+            The number format is defined in the 'account_id_type' parameter. 
+          example: "00491500051234567892"
+          schema:
+            type: string
+        - name: transaction_id
+          required: true
+          in: path
+          description: ID of the transaction to be included in the query response
+          example: "3840"
+          schema:
+            type: string
+        - name: account_id_type
+          required: false
+          in: query
+          description: >-
+            Format used for the account number in the 'account_id' parameter.
+
+
+            The possible values are:
+
+            - IBA = IBAN code
+
+            - BBA = Basic Bank Account Number (BBAN) that represents a country-specific bank account number. Each country has its own standards for the format and length of the BBAN. The value is at most 31 char or 35 bytes long. 
+
+
+            For example: 
+
+            - In UK, the BBAN is: Sortcode(6) + Account(8)
+
+            - In Spain, it is: Banco(4) + Sucursal(4) + CD(2) + CTA(10)
+
+
+            The default value is BBA.
+          example: IBA
+          schema:
+            type: string
+        - name: Channel-Access-Agreement-Id
+          required: false
+          in: header
+          description: >-
+            Channel access agreement ID.
+
+
+            If a value is provided for this parameter, the requested data is retrieved only if the defined channel access agreement authorises the logged-in person to access that data.
+          example: "004910015200000090"
+          schema:
+            type: string
+        - name: Access-Channel
+          required: false
+          in: header
+          description: >-
+            Access channel or operating channel the customer is using. 
+
+
+            If a value is provided for this parameter, the response includes the alias for the specific channel. 
+
+
+            The possible values are:
+
+            - web
+
+            - mobile
+
+            - back office
+          example: web
+          schema:
+            type: string
+      security:
+        - JWTProfile:
+            - acctrancid.read
+  "/{account_id}/validate_information":
+    post:
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/accountValidateResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "415":
+          description: Unsupported media type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "504":
+          description: Gateway timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+      summary: Validates the customer's account status, product type that can be
+        associated with the account, and amount of funds in the account.
+      description: >-
+        Validates the customer's account status. The validation also determines
+        whether the account can be associated with a specific product type and
+        contains enough funds for a specific purchase. This operation is
+        available to Santander staff, in addition to physical and business
+        customers.
+
+
+        To send this request, you must provide an account number in the request path.  The number uses the BBAN format by default. To use another format, define the format in the 'account_id_type' parameter.
+      parameters:
+        - $ref: "#/components/parameters/X-B3-TraceId"
+        - $ref: "#/components/parameters/X-B3-ParentSpanId"
+        - $ref: "#/components/parameters/X-B3-SpanId"
+        - $ref: "#/components/parameters/X-B3-Sampled"
+        - $ref: "#/components/parameters/X-Santander-Device"
+        - $ref: "#/components/parameters/X-Santander-Client-Id"
+        - $ref: "#/components/parameters/Authorization"
+        - name: Access-Channel
+          required: false
+          in: header
+          description: >-
+            Access channel or operating channel the customer is using. 
+
+
+            If a value is provided for this parameter, the response includes the alias for the specific channel. 
+
+
+            The possible values are:
+
+            - web
+
+            - mobile
+
+            - back office
+          example: web
+          schema:
+            type: string
+        - name: Channel-Access-Agreement-Id
+          required: false
+          in: header
+          description: >-
+            Channel access agreement ID.
+
+
+            If a value is provided for this parameter, the requested data is retrieved only if the defined channel access agreement authorises the logged-in person to access that data.
+          example: "004910015200000090"
+          schema:
+            type: string
+        - name: account_id
+          required: true
+          in: path
+          description: |-
+            Number of the account to be used in the query. 
+
+            The number format is defined in the 'account_id_type' parameter. 
+          example: "00491500051234567892"
+          schema:
+            type: string
+        - name: account_id_type
+          required: false
+          in: query
+          description: >-
+            Format used for the account number in the 'account_id' parameter.
+
+
+            The possible values are:
+
+            - IBA = IBAN code
+
+            - BBA = Basic Bank Account Number (BBAN) that represents a country-specific bank account number. Each country has its own standards for the format and length of the BBAN. The value is at most 31 char or 35 bytes long. 
+
+
+            For example: 
+
+            - In UK, the BBAN is: Sortcode(6) + Account(8)
+
+            - In Spain, it is: Banco(4) + Sucursal(4) + CD(2) + CTA(10)
+
+
+            The default value is BBA.
+          example: IBA
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/accountValidateRequest"
+        description: Data structure containing the validation request details
+      security:
+        - JWTProfile:
+            - accvalcid
+  "/{account_id}/limits":
+    post:
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/accountLimitResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "415":
+          description: Unsupported media type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "504":
+          description: Gateway timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+      summary: Creates a new limit for an account.
+      description: >-
+        Creates a limit for a specific account. This operation is available for
+        Santander staff only.
+
+
+        To send this request, you must provide an account number in the request path. The number uses the BBAN format by default. To use another format, define the format in the 'account_id_type' parameter.
+
+
+        When an account credit movement is expected, but not yet booked, a limit can be used to temporarily approve a specific overdraft limit for the account.
+
+
+        The created limit has an impact on the overdraft limit of the account, and consequently also on the available balance. The limit is removed:
+
+        - When the limit amount is booked on the account using a matching limit ID
+
+        - Automatically after its validity period ends
+      parameters:
+        - $ref: "#/components/parameters/X-B3-TraceId"
+        - $ref: "#/components/parameters/X-B3-ParentSpanId"
+        - $ref: "#/components/parameters/X-B3-SpanId"
+        - $ref: "#/components/parameters/X-B3-Sampled"
+        - $ref: "#/components/parameters/X-Santander-Device"
+        - $ref: "#/components/parameters/X-Santander-Client-Id"
+        - $ref: "#/components/parameters/Authorization"
+        - name: account_id
+          required: true
+          in: path
+          description: |-
+            Number of the account for which a limit is created. 
+
+            The number format is defined in the 'account_id_type' parameter. 
+          example: "00491500051234567892"
+          schema:
+            type: string
+        - name: account_id_type
+          required: false
+          in: query
+          description: >-
+            Format used for the account number in the 'account_id' parameter.
+
+
+            The possible values are:
+
+            - IBA = IBAN code
+
+            - BBA = Basic Bank Account Number (BBAN) that represents a country-specific bank account number. Each country has its own standards for the format and length of the BBAN. The value is at most 31 char or 35 bytes long. 
+
+
+            For example: 
+
+            - In UK, the BBAN is: Sortcode(6) + Account(8)
+
+            - In Spain, it is: Banco(4) + Sucursal(4) + CD(2) + CTA(10)
+
+
+            The default value is BBA.
+          example: IBA
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/accountLimitRequest"
+        description: Data structure containing the account limit request details
+        required: true
+      security:
+        - JWTProfile:
+            - acclimit
+  "/{account_id}/limits/{limit_id}":
+    delete:
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "504":
+          description: Gateway timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+      summary: Removes an account limit.
+      description: >-
+        Removes a specific limit from a specific account. This operation is
+        available for Santander staff only.
+
+
+        To send this request, you must provide an account number and a unique limit ID in the request path. The account number uses the BBAN format by default. To use another format, define the format in the 'account_id_type' parameter.
+      parameters:
+        - $ref: "#/components/parameters/X-B3-TraceId"
+        - $ref: "#/components/parameters/X-B3-ParentSpanId"
+        - $ref: "#/components/parameters/X-B3-SpanId"
+        - $ref: "#/components/parameters/X-B3-Sampled"
+        - $ref: "#/components/parameters/X-Santander-Device"
+        - $ref: "#/components/parameters/X-Santander-Client-Id"
+        - $ref: "#/components/parameters/Authorization"
+        - name: account_id
+          required: true
+          in: path
+          description: |-
+            Number of the account from which a limit is removed. 
+
+            The number format is defined in the 'account_id_type' parameter. 
+          example: "00491500051234567892"
+          schema:
+            type: string
+        - name: limit_id
+          required: true
+          in: path
+          description: ID of the limit to be removed
+          example: "2231231124124"
+          schema:
+            type: string
+        - name: account_id_type
+          required: false
+          in: query
+          description: >-
+            Format used for the account number in the 'account_id' parameter.
+
+
+            The possible values are:
+
+            - IBA = IBAN code
+
+            - BBA = Basic Bank Account Number (BBAN) that represents a country-specific bank account number. Each country has its own standards for the format and length of the BBAN. The value is at most 31 char or 35 bytes long. 
+
+
+            For example: 
+
+            - In UK, the BBAN is: Sortcode(6) + Account(8)
+
+            - In Spain, it is: Banco(4) + Sucursal(4) + CD(2) + CTA(10)
+
+
+            The default value is BBA.
+          example: IBA
+          schema:
+            type: string
+      security:
+        - JWTProfile:
+            - acccanlim
+  "/{account_id}/statements":
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/statementsListResponse"
+        "204":
+          description: No data response
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+        "504":
+          description: Gateway timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errors"
+      summary: Account statement list Inquiry, allows filtering by date period,
+        retrieve the list of statements for a account contract
+      description: It provides the account statements list sorted by statementdate in
+        descending order, apearing at first the most recent statement
+      parameters:
+        - $ref: "#/components/parameters/X-B3-TraceId"
+        - $ref: "#/components/parameters/X-B3-ParentSpanId"
+        - $ref: "#/components/parameters/X-B3-SpanId"
+        - $ref: "#/components/parameters/X-B3-Sampled"
+        - $ref: "#/components/parameters/X-Santander-Device"
+        - $ref: "#/components/parameters/X-Santander-Client-Id"
+        - $ref: "#/components/parameters/Authorization"
+        - name: Access-Channel
+          required: false
+          in: header
+          description: >-
+            The access channel or operating channel through which the client
+            operates. If this field is informed, the alias retrieved will be the
+            alias for this especific channel. Possible values:
+
+            web
+
+            mobile
+
+            back office
+          example: web
+          schema:
+            type: string
+        - name: account_id
+          required: true
+          in: path
+          description: Number Account Identification. Possible formats acording with
+            account_id_type. BBAN is the default format.
+          example: |2
+             2313726917672140515
+          schema:
+            type: string
+        - name: account_id_type
+          required: false
+          in: query
+          description: >-
+            Format in which the account number is expressed, regarding
+            accounts_id field. Possible values
+
+            IBA: IBAN code. reference: https://www.iso.org/standard/41031.html. 
+
+            BBA: BBAN is the English acronym for Basic Bank Account code. Represents a country-specific bank account number. Each country has its format and length of BBAN depending on its own standards. Currently there is no common standard that unifies the format of BBAN in the EU or other entities. This is why the IBAN appeared to help standardize international bank transfers. BBAN CODE.Nationals accounts format of the a country. Maximum long  31 char of all 35 bytes of the field. For exemple: In UK Sortcode(6) + Account(8); In ES Banco(4)+ Sucursal(4) + CD(2) + CTA(10).
+          example: IBA
+          schema:
+            type: string
+        - name: from_date
+          required: false
+          in: query
+          description: "Start date period to be considered for the retrieve of statement
+            Date format: yyyyMMddThhmmssfff±timezone where fff are the
+            milliseconds. If the time zone is not relevant, replace it with
+            0000."
+          example: 20190314T014319060+0100
+          schema:
+            type: string
+        - name: to_date
+          required: false
+          in: query
+          description: "End date period to be considered for the retrieve of statement.
+            Date format: yyyyMMddThhmmssfff±timezone where fff are the
+            milliseconds. If the time zone is not relevant, replace it with
+            0000."
+          example: 20190314T014319060+0100
+          schema:
+            type: string
+        - name: _offset
+          required: true
+          in: query
+          description: >-
+            Number of pages to be omitted from the beginning of the response.
+
+
+            The number of rows on each omitted page is determined by the '_limit' parameter.
+
+
+            The default value is 0, in which case the first page is shown.
+          example: "5"
+          schema:
+            type: string
+        - name: _limit
+          required: false
+          in: query
+          description: |-
+            Maximum number of rows to be included on each page in the response.
+
+            Fewer rows can be returned, if the query does not yield that many.
+
+            The default value is 20.
+          example: "20"
+          schema:
+            type: string
+      security:
+        - JWTProfile:
+            - accountstat.read
+servers:
+  - url: /v2/accounts
+components:
+  parameters:
+    X-Santander-Client-Id:
+      name: X-Santander-Client-Id
+      required: true
+      in: header
+      description: Client ID header
+      example: a1b30a84-7bf3-442e-84a0-e935d8163b5a
+      schema:
+        type: string
+    Authorization:
+      name: Authorization
+      required: true
+      in: header
+      description: Authorization security header
+      example: Bearer 923ioh89r23ohwedh823ohdn9hite89yyugfsdf
+      schema:
+        type: string
+    X-B3-TraceId:
+      name: X-B3-TraceId
+      required: false
+      in: header
+      description: |-
+        Overall ID of the trace, shared by every span in the trace. 
+
+        The value is 64 or 128 bits long.
+      example: 80f198ee56343ba864fe8b2a57d3eff7
+      schema:
+        type: string
+    X-B3-ParentSpanId:
+      name: X-B3-ParentSpanId
+      required: false
+      in: header
+      description: |-
+        Position of the parent operation in the trace tree.
+
+        The value is 64 bits long. 
+
+        The value is omitted when the span is the root of the trace tree. 
+      example: 05e3ac9a4f6e3b90
+      schema:
+        type: string
+    X-B3-SpanId:
+      name: X-B3-SpanId
+      required: false
+      in: header
+      description: >-
+        Position of the current operation in the trace tree.
+
+
+        The value is 64 bits long.
+
+
+        Do not interpret the value: it may or may not be derived from the value of the TraceId.
+      example: e457b5a2e4d86bd1
+      schema:
+        type: string
+    X-B3-Sampled:
+      name: X-B3-Sampled
+      required: false
+      in: header
+      description: >-
+        Sampling decision.
+
+
+        Sampling is a mechanism to reduce the volume of data in the tracing system. In B3, sampling applies consistently per-trace: once the sampling decision is made, the same value must be consistently sent downstream. This means that either all or no spans share a trace ID.
+
+
+        The possible values are: 
+
+        - 0 = Deny
+
+        - 1 = Accept
+
+        - d = Debug
+      example: "1"
+      schema:
+        type: string
+    X-Santander-Device:
+      name: X-Santander-Device
+      required: false
+      in: header
+      description: >-
+        Device information permitted for the data query. 
+
+        You can use this parameter to apply an experience base to optimize data collection
+      example: mobile
+      schema:
+        type: string
+  securitySchemes:
+    JWTProfile:
+      type: oauth2
+      description: OAuth Grant type, JWT Profile
+      x-tokenIntrospect:
+        url: $(sca-security-url)
+      flows:
+        implicit:
+          authorizationUrl: $(authorization-url)
+          scopes:
+            acclistcid.read: Scope for obtain a list of accounts.
+            accdetcid.read: Scope for detail of an account.
+            acctrancid.read: Scope for detail of an account.
+            accvalcid: Scope for detail of an account.
+            acclimit: Scope for detail of an account.
+            acccanlim: Scope for detail of an account.
+            accountstat.read: Scope for detail of an account.
+    X-Santander-Client-Id:
+      type: apiKey
+      in: header
+      name: X-Santander-Client-Id
+      description: Client ID header
+  schemas:
+    Balances:
+      description: Data structure containing the balance recorded in the account at the
+        date of the query
+      properties:
+        amount:
+          type: number
+          format: double
+          description: Amount. Data in ISO 20022 format containing up to 18 digits from
+            which 5 may be decimals. Separation is a point.
+          example: 12000.5
+        currencyCode:
+          type: string
+          description: >-
+            Currency code.
+
+
+            The value is the alpha-3 format defined in ISO 4217 (https://www.iso.org/iso-4217-currency-codes.html).
+          example: EUR
+        lastUpdate:
+          type: string
+          description: >-
+            Date of the last update.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+    AccountsListLinks:
+      description: Data structure containing the links for moving between the account and
+        transaction detail pages
+      properties:
+        accountDetailsLink:
+          type: string
+          description: Link to the account details
+          example: /accounts/00491500051234567892
+        transactionsListLink:
+          type: string
+          description: Link to the account transactions
+          example: /accounts/00491500051234567892/transactions
+    accountDataDetails:
+      description: Data structure containing account details
+      properties:
+        displayNumber:
+          type: string
+          description: Account number to be displayed
+          example: ES6000491500051234567892
+        accountId:
+          type: string
+          description: Account number shown using the account number format defined in the
+            'accountIdType' property
+          example: ES6000491500051234567892
+        accountIdType:
+          type: string
+          description: >-
+            Format used for the account number in the 'accountId' property.
+
+
+            The possible values are:
+
+            - IBA = IBAN code
+
+            - BBA = Basic Bank Account Number (BBAN) that represents a country-specific bank account number. Each country has its own standards for the format and length of the BBAN. The value is at most 31 char or 35 bytes long. 
+
+
+            For example: 
+
+            - In UK, the BBAN is: Sortcode(6) + Account(8)
+
+            - In Spain, it is: Banco(4) + Sucursal(4) + CD(2) + CTA(10))
+
+
+            The default value is BBA.
+          example: IBA
+        alias:
+          type: string
+          description: Name (alias) the customer has assigned to the account for easy
+            identification Applies only when the operation is used by a physical
+            or business customer, not when used by Santander staff.
+          example: My chequing account
+        mainItem:
+          type: boolean
+          description: >-
+            Whether the account is the customer's main account. Applies only
+            when the operation is used by a physical or business customer, not
+            when used by Santander staff. 
+
+
+            The possible values are:
+
+            - TRUE = Main account
+
+            - FALSE = Secondary account
+          example: "true"
+        type:
+          type: string
+          description: |-
+            Account type.
+
+            The possible values are: 
+            - Current Account
+            - Saving Account
+            - Credit Account
+          example: Current Account
+        description:
+          type: string
+          description: Account description
+          example: Cuenta 123 joven
+        status:
+          type: string
+          description: >-
+            Account status.
+
+
+            The possible values are:
+
+            - Open = Account is open and movements are restricted only by the customer's available balance and account contract attributes. This includes accounts with warnings.
+
+            - Closed = Account is closed.
+
+            - Pending Closure = Account is being closed.
+
+            - Open with Severe Lock = Account is open but there is a lock on some or all account movements.
+          example: Open
+        customerId:
+          type: string
+          description: Customer ID of the main participant of the account
+          example: F000223141
+        costCenter:
+          type: string
+          description: >-
+            Branch office that manages the customer account. 
+
+
+            The value is max. 20 char long.
+
+
+            In case of migrated accounts from other banks or closed offices, the branch office usually does not match with the branch that the customer knows and that appears in the account number. Each migrated account has both a real open, operational, accounting branch that manages them and a branch included in this property.
+          example: EEEEBBBB
+        mainBalance:
+          description: Data structure containing the balance recorded in the account at the
+            date of the query
+          allOf:
+            - $ref: "#/components/schemas/Balances"
+        availableBalance:
+          description: >-
+            Data structure containing the balance that can be used at the time
+            of the query.
+
+
+            The available balance is calculated to include any balance to be consolidated,   withholdings and overdrafts:
+
+            'availableBalance = mainBalance - pendingBalance - withholding + overdraftLimit + credit limit'
+          allOf:
+            - $ref: "#/components/schemas/Balances"
+        pendingBalance:
+          description: Data structure containing the balance to be consolidated, because it
+            has a different valuation from that of the day of the query
+          allOf:
+            - $ref: "#/components/schemas/Balances"
+        withholdingBalance:
+          description: >-
+            Data structure containing the part of the main balance that the
+            customer cannot temporarily dispose of.
+
+
+            A withholding balance can be caused by a cash deposit made by an ATM when the contents of the envelope have not yet been validated, or a deposit of a check that has not yet been cashed.
+          allOf:
+            - $ref: "#/components/schemas/Balances"
+        overdraftLimit:
+          description: >-
+            Data structure containing the amount that the available balance can
+            be exceeded by without going into tactical overdraft, if the
+            available balance is defined as:
+
+            'availableBalance = mainBalance - pendingBalance - withholding + credit limit'
+          allOf:
+            - $ref: "#/components/schemas/Balances"
+        overdraftUsed:
+          description: Data structure containing the amount of overdraft consumed. Applies
+            only to accounts that have an overdraft limit.
+          allOf:
+            - $ref: "#/components/schemas/Balances"
+        accountsListLinks:
+          description: Data structure containing the links for moving between the account
+            and transaction detail pages
+          allOf:
+            - $ref: "#/components/schemas/AccountsListLinks"
+    accountsDataList:
+      type: array
+      items:
+        $ref: "#/components/schemas/accountDataDetails"
+      description: Array of the customer's accounts
+    PaginationLinks:
+      description: Data structure containing the links for moving between the account list
+        pages
+      properties:
+        _first:
+          type: string
+          description: >-
+            Link to the first page. 
+
+
+            The exact content of the page depends on the input parameters provided in the request, such as the offset.
+          example: /accounts?_offset=0
+        _prev:
+          type: string
+          description: >-
+            Link to the previous page of the accounts list. 
+
+
+            The exact content of the page depends on the input parameters provided in the request, such as the offset.
+          example: /accounts?_offset=0
+        _next:
+          type: string
+          description: >-
+            Link to the next page of the accounts list. 
+
+
+            The exact content of the page depends on the input parameters provided in the request, such as the offset.
+          example: /accounts?_offset=1
+    accountsListResponse:
+      description: Response for a request to retrieve a list of accounts
+      properties:
+        accountsDataList:
+          description: Array of the customer's accounts
+          allOf:
+            - $ref: "#/components/schemas/accountsDataList"
+        _links:
+          description: Data structure containing the links for moving between the account
+            list pages
+          allOf:
+            - $ref: "#/components/schemas/PaginationLinks"
+    RelatedCardsItem:
+      description: Data structure containing the details of a related card
+      properties:
+        displayNumber:
+          type: string
+          description: Card number
+          example: 5498-9882-8676-9373
+        cardLink:
+          type: string
+          description: Link to the card details
+          example: /cards/5498988286769373
+    RelatedCardsList:
+      type: array
+      items:
+        $ref: "#/components/schemas/RelatedCardsItem"
+      description: Array of cards related to an account
+    AmountOnly:
+      description: Data structure containing the transaction amount
+      properties:
+        amount:
+          type: number
+          format: double
+          description: Amount. Data in ISO 20022 format containing up to 18 digits from
+            which 5 may be decimals. Separation is a point.
+          example: 123.45
+        currencyCode:
+          type: string
+          description: >-
+            Currency code.
+
+
+            The value is the alpha-3 format defined in ISO 4217 (https://www.iso.org/iso-4217-currency-codes.html).
+          example: EUR
+    LastesTransctionsListAccountsItem:
+      description: Data structure containing the details of the last transaction on an
+        account
+      properties:
+        transactionId:
+          type: string
+          description: Unique transaction ID
+          example: "3840"
+        creationDate:
+          type: string
+          description: >-
+            Date when the transaction was originally created.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+        processedDate:
+          type: string
+          description: >-
+            Date when the transaction was processed in the system.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+        accountingDate:
+          type: string
+          description: >-
+            Accounting date of the transaction (the date used to calculate the
+            profit and loss).
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+        description:
+          type: string
+          description: Transaction description
+          example: Cuenta 123 joven
+        transactionType:
+          type: string
+          description: |-
+            Transaction type.
+
+            The possible values are:
+            - credit
+            - debit
+            - reverse credit
+            - reverse debit
+          example: Debit
+        transactionCategory:
+          type: string
+          description: Transaction category
+          example: Withdraw money
+        amount:
+          description: Data structure containing the transaction amount
+          allOf:
+            - $ref: "#/components/schemas/AmountOnly"
+        transactionDetailsLink:
+          type: string
+          description: Link to the transaction details
+          example: /accounts/00491500051234567892/transactions/3840
+    LastesTransctionsListAccounts:
+      type: array
+      items:
+        $ref: "#/components/schemas/LastesTransctionsListAccountsItem"
+      description: Array of latest transactions
+    accountDetailsResponse:
+      description: Response for a request to retrieve the details of a specific account
+      properties:
+        displayNumber:
+          type: string
+          description: Account number to be displayed
+          example: ES6000491500051234567892
+        accountId:
+          type: string
+          description: Account number in the format defined in the 'accountIdType' property
+          example: "00491500051234567892"
+        accountIdType:
+          type: string
+          description: >-
+            Format used for the account number in the 'accountId' property.
+
+
+            The possible values are:
+
+            - IBA = IBAN code
+
+            - BBA = Basic Bank Account Number (BBAN) that represents a country-specific bank account number. Each country has its own standards for the format and length of the BBAN. The value is at most 31 char or 35 bytes long. 
+
+
+            For example: 
+
+            - In UK, the BBAN is: Sortcode(6) + Account(8)
+
+            - In Spain, it is: Banco(4) + Sucursal(4) + CD(2) + CTA(10)
+
+
+            The default value is BBA.
+          example: BBA
+        alias:
+          type: string
+          description: Name (alias) the customer has assigned to the account for easy
+            identification Applies only when the operation is used by a physical
+            or business customer, not when used by Santander staff.
+          example: My chequing account
+        mainItem:
+          type: boolean
+          description: >-
+            Whether the account is the customer's main account. Applies only
+            when the operation is used by a physical or business customer, not
+            when used by Santander staff. 
+
+
+            The possible values are:
+
+            - TRUE = Main account
+
+            - FALSE = Secondary account
+          example: "true"
+        type:
+          type: string
+          description: |-
+            Account type.
+
+            The possible values are: 
+            - Current Account
+            - Saving Account
+            - Credit Account
+          example: Current Account
+        description:
+          type: string
+          description: Account description
+          example: Cuenta 123 joven
+        status:
+          type: string
+          description: >-
+            Account status.
+
+
+            The possible values are:
+
+            - Open = Account is open and movements are restricted only by the customer's available balance and account contract attributes. This includes accounts with warnings.
+
+            - Closed = Account is closed.
+
+            - Pending Closure = Account is being closed.
+
+            - Open with Severe Lock = Account is open but there is a lock on some or all account movements.
+          example: Open
+        customerId:
+          type: string
+          description: Customer ID of the main participant of the account
+          example: 1234-5678-90
+        lastTransactionDate:
+          type: string
+          description: >-
+            Date of the last transaction.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+        relatedCards:
+          description: Array of cards related to an account
+          allOf:
+            - $ref: "#/components/schemas/RelatedCardsList"
+        costCenter:
+          type: string
+          description: >-
+            Branch office that manages the customer account. 
+
+
+            The value is max. 20 char long.
+
+
+            In case of migrated accounts from other banks or closed offices, the branch office usually does not match with the branch that the customer knows and that appears in the account number. Each migrated account has both a real open, operational, accounting branch that manages them and a branch included in this property.
+          example: EEEEBBBB
+        mainBalance:
+          description: Data structure containing the balance recorded in the account at the
+            date of the query
+          allOf:
+            - $ref: "#/components/schemas/Balances"
+        availableBalance:
+          description: >-
+            Data structure containing the balance that can be used at the time
+            of the query.
+
+
+            The available balance is calculated to include any balance to be consolidated,   withholdings and overdrafts:
+
+            'availableBalance = mainBalance - pendingBalance - withholding + overdraftLimit + credit limit'
+          allOf:
+            - $ref: "#/components/schemas/Balances"
+        pendingBalance:
+          description: Data structure containing the balance to be consolidated, because it
+            has a different valuation from that of the day of the query
+          allOf:
+            - $ref: "#/components/schemas/Balances"
+        withholdingBalance:
+          description: >-
+            Data structure containing the part of the main balance that the
+            customer cannot temporarily dispose of.
+
+
+            A withholding balance can be caused by a cash deposit made by an ATM when the contents of the envelope have not yet been validated, or a deposit of a check that has not yet been cashed.
+          allOf:
+            - $ref: "#/components/schemas/Balances"
+        overdraftLimit:
+          description: >-
+            Data structure containing the amount that the available balance can
+            be exceeded by without going into tactical overdraft, if the
+            available balance is defined as:
+
+            'availableBalance = mainBalance - pendingBalance - withholding + credit limit'
+          allOf:
+            - $ref: "#/components/schemas/Balances"
+        overdraftUsed:
+          description: Data structure containing the amount of overdraft consumed. Applies
+            only to accounts that have an overdraft limit.
+          allOf:
+            - $ref: "#/components/schemas/Balances"
+        latestTransactions:
+          description: Array of latest transactions
+          allOf:
+            - $ref: "#/components/schemas/LastesTransctionsListAccounts"
+        transactionsListLink:
+          type: string
+          description: Link to the account transactions list
+          example: /accounts/00491500051234567892/transactions
+    balance:
+      description: Data structure containing the transaction amount
+      properties:
+        amount:
+          type: number
+          format: double
+          description: Amount. Data in ISO 20022 format containing up to 18 digits from
+            which 5 may be decimals. Separation is a point.
+          example: 123.45
+        currencyCode:
+          type: string
+          description: >-
+            Currency code.
+
+
+            The value is the alpha-3 format defined in ISO 4217 (https://www.iso.org/iso-4217-currency-codes.html).
+          example: EUR
+    localOperation:
+      description: Data structure containing the local operation details
+      properties:
+        ltcCode:
+          type: string
+          description: >-
+            Local transaction code defining the type of transaction in the local
+            entity.
+
+
+            Local transaction codes are used to facilitate multi-local reconciliation without using SWIFT transaction codes.
+          example: "645"
+        ltcDescription:
+          type: string
+          description: Description of a local transaction code
+          example: credit check
+        aditionalInformation:
+          type: string
+          description: Additional information related to the transaction, such as its
+            beneficiary, sender, or concept
+          example: Transmediterranea 234/11
+    customerOperation:
+      description: Data structure containing the customer operation details
+      properties:
+        customerTCode:
+          type: string
+          description: >-
+            Customized transaction code defining the type of transaction in the
+            local entity.
+
+
+            Customized transaction codes are used to facilitate multi-local reconciliation without using SWIFT transaction codes.
+          example: A30
+        customerTDescription:
+          type: string
+          description: Description of a customized transaction code
+          example: credit sbf
+        customerAditionalInformation:
+          type: string
+          description: Additional customized information related to the transaction, such
+            as its beneficiary, sender, or concept
+          example: credit check // Transmediterranea 234/11
+    operation:
+      description: Data structure containing the transaction operation details
+      properties:
+        localOperation:
+          description: Data structure containing the local operation details
+          allOf:
+            - $ref: "#/components/schemas/localOperation"
+        customerOperation:
+          description: Data structure containing the customer operation details
+          allOf:
+            - $ref: "#/components/schemas/customerOperation"
+        swiftCode:
+          type: string
+          description: |-
+            Swift code.
+
+            The possible values are defined in the API documentation.
+          example: NCHK
+    references:
+      description: Data structure containing the transaction references
+      properties:
+        transactionClientReference:
+          type: string
+          description: >-
+            [16x] Client transaction identification (customer reference included
+            in a domestic electronic statement).
+
+
+            If the 'client transaction identification' field is not used in the report for the banking system supervisor for this particular entry, 'NONREF' must be used.
+          example: CF44-312-1234ABC197
+        transactionBatchReference:
+          type: string
+          description: >-
+            [16x] Transaction identification (customer reference included in a
+            domestic electronic batch).
+
+
+            If the 'client batch identification' field is not used in the report for the banking system supervisor for this particular entry, 'NONREF' must be used.
+          example: 20180605-CONF135
+        transactionInternalReference:
+          type: string
+          description: |-
+            [16x] Internal reference of the account servicing institution.
+
+            If there is no information, 'NONREF' must be used.
+          example: 1500CF321006HSK1
+    transactionDetails:
+      description: Data structure containing the transaction details
+      properties:
+        transactionId:
+          type: string
+          description: Unique transaction ID
+          example: "3840"
+        creationDate:
+          type: string
+          description: >-
+            Date when the transaction was originally created.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+        processedDate:
+          type: string
+          description: >-
+            Date when the transaction was processed in the system.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+        accountingDate:
+          type: string
+          description: >-
+            Accounting date of the transaction (the date used to calculate the
+            profit and loss).
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+        description:
+          type: string
+          description: Transaction description
+          example: payment
+        transactionType:
+          type: string
+          description: |-
+            Transaction type.
+
+            The possible values are:
+            - credit
+            - debit
+            - reverse credit
+            - reverse debit
+          example: |-
+            debit
+            D
+        transactionCategory:
+          type: string
+          description: Transaction category
+          example: withdraw money
+        amount:
+          description: Data structure containing the transaction amount
+          allOf:
+            - $ref: "#/components/schemas/balance"
+        balanceResult:
+          description: Data structure containing the account balance after the transaction
+            has been booked
+          allOf:
+            - $ref: "#/components/schemas/balance"
+        operation:
+          description: Data structure containing the transaction operation details
+          allOf:
+            - $ref: "#/components/schemas/operation"
+        references:
+          description: Data structure containing the transaction references
+          allOf:
+            - $ref: "#/components/schemas/references"
+    transactionsDataListItem:
+      description: Data structure containing the transaction data
+      properties:
+        transactionDetails:
+          description: Data structure containing the transaction details
+          allOf:
+            - $ref: "#/components/schemas/transactionDetails"
+        transactionDetailsLink:
+          type: string
+          description: Link to the transaction details
+          example: /accounts/00491500051234567892/transactions/3840
+    transactionsDataList:
+      type: array
+      items:
+        $ref: "#/components/schemas/transactionsDataListItem"
+      description: Array of transactions
+    _links:
+      description: Data structure containing the links for moving between the account
+        details and transaction list pages
+      properties:
+        accountDetailsLink:
+          type: string
+          description: Link to the account details
+          example: /accounts/00491500051234567892
+        _first:
+          type: string
+          description: >-
+            Link to the first page. 
+
+
+            The exact content of the page depends on the input parameters provided in the request, such as the offset.
+          example: /accounts/00491500051234567892/transactions
+        _prev:
+          type: string
+          description: >-
+            Link to the previous page of the accounts list. 
+
+
+            The exact content of the page depends on the input parameters provided in the request, such as the offset.
+          example: /accounts/00491500051234567892/transactions?offset=1
+        _next:
+          type: string
+          description: >-
+            Link to the next page of the accounts list. 
+
+
+            The exact content of the page depends on the input parameters provided in the request, such as the offset.
+          example: /accounts/00491500051234567892/transactions?offset=3
+        _last:
+          type: string
+          description: >-
+            Link to the last page of the accounts list. 
+
+
+            The exact content of the page depends on the input parameters provided in the request, such as the offset.
+          example: /accounts/00491500051234567892/transactions?offset=99
+    transactionsListResponse:
+      description: Response for a request to retrieve a list of transactions
+      properties:
+        displayNumber:
+          type: string
+          description: Account number to be displayed
+          example: ES6000491500051234567892
+        accountId:
+          type: string
+          description: Account number in the format defined in the 'accountIdType' property
+          example: "00491500051234567892"
+        accountIdType:
+          type: string
+          description: >-
+            Format used for the account number in the 'accountId' property.
+
+
+            The possible values are:
+
+            - IBA = IBAN code
+
+            - BBA = Basic Bank Account Number (BBAN) that represents a country-specific bank account number. Each country has its own standards for the format and length of the BBAN. The value is at most 31 char or 35 bytes long. 
+
+
+            For example: 
+
+            - In UK, the BBAN is: Sortcode(6) + Account(8)
+
+            - In Spain, it is: Banco(4) + Sucursal(4) + CD(2) + CTA(10)
+
+
+            The default value is BBA.
+          example: BBA
+        alias:
+          type: string
+          description: Name (alias) the customer has assigned to the account for easy
+            identification Applies only when the operation is used by a physical
+            or business customer, not when used by Santander staff.
+          example: My chequing account
+        transactionsDataList:
+          description: Array of transactions
+          allOf:
+            - $ref: "#/components/schemas/transactionsDataList"
+        _links:
+          description: Data structure containing the links for moving between the account
+            details and transaction list pages
+          allOf:
+            - $ref: "#/components/schemas/_links"
+    transactionDetailsResponse:
+      description: Response for a request to retrieve the details of a specific transaction
+      properties:
+        displayNumber:
+          type: string
+          description: Account number to be displayed
+          example: ES6000491500051234567892
+        accountId:
+          type: string
+          description: Account number in the format defined in the 'accountIdType' property
+          example: "00491500051234567892"
+        accountIdType:
+          type: string
+          description: >-
+            Format used for the account number in the 'accountId' property.
+
+
+            The possible values are:
+
+            - IBA = IBAN code
+
+            - BBA = Basic Bank Account Number (BBAN) that represents a country-specific bank account number. Each country has its own standards for the format and length of the BBAN. The value is at most 31 char or 35 bytes long. 
+
+
+            For example: 
+
+            - In UK, the BBAN is: Sortcode(6) + Account(8)
+
+            - In Spain, it is: Banco(4) + Sucursal(4) + CD(2) + CTA(10)
+
+
+            The default value is BBA.
+          example: BBA
+        alias:
+          type: string
+          description: Name (alias) the customer has assigned to the account for easy
+            identification Applies only when the operation is used by a physical
+            or business customer, not when used by Santander staff.
+          example: My chequing account
+        transactionDetails:
+          description: Data structure containing the transaction details
+          allOf:
+            - $ref: "#/components/schemas/transactionDetails"
+        accountDetailsLink:
+          type: string
+          description: Link to the account details
+          example: /accounts/00491500051234567892
+    accountValidateRequest:
+      description: Data structure containing the validation request details
+      properties:
+        customerId:
+          type: string
+          description: Customer ID you want to verify to match the account
+          example: F000034332
+        amount:
+          type: number
+          format: double
+          description: Amount. Data in ISO 20022 format containing up to 18 digits from
+            which 5 may be decimals. Separation is a point.
+          example: 12345
+        currencyCode:
+          type: string
+          description: >-
+            Currency code of the amount to be verified.
+
+
+            The value is the alpha-3 format defined in ISO 4217 (https://www.iso.org/iso-4217-currency-codes.html).
+          example: MXN
+        status:
+          type: string
+          description: >-
+            Status you want to verify to be the current account status.
+
+
+            The possible values are:
+
+            - Open = Account is open and movements are restricted only by the customer's available balance and account contract attributes. This includes accounts with warnings.
+
+            - Closed = Account is closed.
+
+            - Pending Closure = Account is being closed.
+
+            - Open with Severe Lock = Account is open but there is a lock on some or all account movements.
+          example: Open
+        productType:
+          type: string
+          description: >-
+            Product type that you want to verify can be associated with the
+            account. 
+
+            The possible values are:
+
+            - Acquirement
+
+            - loan
+
+            - Assurance
+          example: Acquirement
+    customerIdResult:
+      description: Data structure containing the result of the customer ID validation
+      properties:
+        customerId:
+          type: string
+          description: Customer ID to be validated, as defined in the request
+          example: F00002123
+        result:
+          type: string
+          description: >-
+            Result of the validation.
+
+
+            The value is OK, if the requested customer ID matches with the one stored in the account; otherwise KO.
+          example: OK
+    amountResult:
+      description: Data structure containing the result of the amount validation
+      properties:
+        amount:
+          type: string
+          description: Amount to be validated, as defined in the request
+          example: "12345.00000"
+        result:
+          type: string
+          description: >-
+            Result of the validation.
+
+
+            The value is OK, if the available amount is greater than the requested one; otherwise KO.
+          example: KO
+    currencyCodeResult:
+      description: Data structure containing the result of the currency code validation
+      properties:
+        currencyCode:
+          type: string
+          description: Currency code to be validated, as defined in the request
+          example: EUR
+        result:
+          type: string
+          description: >-
+            Result of the validation.
+
+
+            The value is OK, if the requested currency code matches with the one stored in the account; otherwise KO.
+          example: OK
+    statusResult:
+      description: Data structure containing the result of the account status validation
+      properties:
+        status:
+          type: string
+          description: Account status to be validated, as defined in the request
+          example: Open
+        result:
+          type: string
+          description: >-
+            Result of the validation.
+
+
+            The value is OK, if the requested status matches with the current account status; otherwise KO.
+          example: OK
+    accountValidateResponse:
+      description: Response for a request to validate the account status, product type that
+        can be associated with the account, and amount of funds in the account
+      properties:
+        customerIdResult:
+          description: Data structure containing the result of the customer ID validation
+          allOf:
+            - $ref: "#/components/schemas/customerIdResult"
+        amountResult:
+          description: Data structure containing the result of the amount validation
+          allOf:
+            - $ref: "#/components/schemas/amountResult"
+        currencyCodeResult:
+          description: Data structure containing the result of the currency code validation
+          allOf:
+            - $ref: "#/components/schemas/currencyCodeResult"
+        statusResult:
+          description: Data structure containing the result of the account status validation
+          allOf:
+            - $ref: "#/components/schemas/statusResult"
+        productTypeResult:
+          description: Data structure containing the result of the product type association
+            validation
+          allOf:
+            - $ref: "#/components/schemas/balance"
+    amountLimit:
+      description: Data structure containing the amount of the limit
+      properties:
+        amount:
+          type: number
+          format: double
+          description: Amount. Data in ISO 20022 format containing up to 18 digits from
+            which 5 may be decimals. Separation is a point.
+          example: 123.45
+        currencyCode:
+          type: string
+          description: >-
+            Currency code.
+
+
+            The value is the alpha-3 format defined in ISO 4217 (https://www.iso.org/iso-4217-currency-codes.html).
+          example: EUR
+    accountLimitRequest:
+      description: Data structure containing the account limit request details
+      properties:
+        amountLimit:
+          description: Data structure containing the amount of the limit
+          allOf:
+            - $ref: "#/components/schemas/amountLimit"
+        limitType:
+          type: string
+          description: |-
+            Type of the limit.
+
+            The possible values are:
+            - Overdraft
+          example: Overdraft
+        reasonType:
+          type: string
+          description: >-
+            General reason for the limit.
+
+
+            The possible values are:
+
+            - Domiciled salary or periodical income
+
+            - Credit limit preattached
+
+            - Balances to be consolidated
+
+            - Credits for specific treatments, sweeps of balances or collecting accounts
+
+            - Other excesses on operational limits
+          example: Credit limite preattached
+        reasonDescription:
+          type: string
+          description: Detailed reason for the limit
+          example: OVERDRAFT AUTHORIZED BY RECURRING REVENUE
+        startDate:
+          type: string
+          description: >-
+            Date when the limit validity starts.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+        endDate:
+          type: string
+          description: >-
+            Date when the limit validity ends.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+    accountLimitResponse:
+      description: Response for a request to create an account limit
+      properties:
+        accountId:
+          type: string
+          description: Account number in the format defined in the 'account_id_iype'
+            property
+          example: "00491500051234567892"
+        limitId:
+          type: string
+          description: Unique limit ID
+          example: "2231231124124"
+        amountLimit:
+          description: Data structure containing the amount of the limit
+          allOf:
+            - $ref: "#/components/schemas/amountLimit"
+        limitType:
+          type: string
+          description: |-
+            Type of the limit.
+
+            The possible values are:
+            - Overdraft
+          example: Overdraft
+        reasonType:
+          type: string
+          description: >-
+            General reason for the limit.
+
+
+            The possible values are:
+
+            - Domiciled salary or periodical income
+
+            - Credit limit preattached
+
+            - Balances to be consolidated
+
+            - Credits for specific treatments, sweeps of balances or collecting accounts
+
+            - Other excesses on operational limits
+          example: Credit limite preattached
+        reasonDescription:
+          type: string
+          description: Detailed reason for the limit
+          example: OVERDRAFT AUTHORIZED BY RECURRING REVENUE
+        startDate:
+          type: string
+          description: >-
+            Date when the limit validity starts.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+        endDate:
+          type: string
+          description: >-
+            Date when the limit validity ends.
+
+
+            The date format is 'yyyyMMddThhmmssfff±timezone', where fff are milliseconds.
+          example: 20190314T014319060+0100
+    statementDocument:
+      description: Document of the statement
+      properties:
+        documentId:
+          type: string
+          description: Document identification
+          example: 2139j3ndfuiofnk23jkduiog
+        repositoryId:
+          type: string
+          description: Instance where the document is available
+          example: SCConDemand
+        documentType:
+          type: string
+          description: Document type
+          example: statements
+        statementDocumentLink:
+          type: string
+          description: Link to contract pdf.
+          example: /documents/2139j3ndfuiofnk23jkduiog?repository_id=SCConDemand&document_type=statements
+    accountStatement:
+      description: Account statement
+      properties:
+        statementId:
+          type: string
+          description: Identification for the statement of a account. The statements refers
+            to the account contract, no to each account of the contract
+          example: "123243"
+        statementDescription:
+          type: string
+          description: Free text. Description of the statement
+          example: Extracto conta octubre 2019
+        statementIssueDate:
+          type: string
+          description: |-
+            Issue date of the statement. (AAAA-MM-DD  ISO 8601) 
+            https://www.iso.org/iso-8601-date-and-time-format.html
+          example: 2019-10-20
+        statementDocument:
+          description: Document of the statement
+          allOf:
+            - $ref: "#/components/schemas/statementDocument"
+    accountStatementsList:
+      type: array
+      items:
+        $ref: "#/components/schemas/accountStatement"
+      description: Accounts Statements List
+    statementsListResponse:
+      description: Statements list response
+      properties:
+        accountId:
+          type: string
+          description: Number Account Identification. This should contain the same
+            information than the field account_id of the imput path area
+          example: "2313726917672140515"
+        accountStatementsList:
+          description: Accounts Statements List
+          allOf:
+            - $ref: "#/components/schemas/accountStatementsList"
+        _links:
+          description: Links to account details and lists pagination
+          allOf:
+            - $ref: "#/components/schemas/_links"
+    errors:
+      description: Data structure containing the details for errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/error"
+          description: Array of errors
+    error:
+      properties:
+        code:
+          type: string
+          description: Unique alphanumeric human readable error code
+          example: XXX
+        message:
+          type: string
+          description: Brief summary of the reported issue
+          example: Message
+        level:
+          type: string
+          description: |-
+            Level of the reported issue. 
+
+             The possible values are: 
+             - info 
+             - warning 
+             - error
+          example: error
+        description:
+          type: string
+          description: Detailed description of the reported issue
+          example: Description
+      description: Data structure containing the error details
